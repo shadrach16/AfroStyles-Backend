@@ -17,7 +17,7 @@ const { uploadToCloudinary } = require('../utils/cloudinary'); // 👈 Import Cl
 const router = express.Router();
 
 const ai = new GoogleGenAI({
-    apiKey:  'AIzaSyCGYrhgS5jvZzpN67QOWywKlaKgCyyTZNU',
+    apiKey:  process.env.GEMINI_API_KEY,
   });
 
 
