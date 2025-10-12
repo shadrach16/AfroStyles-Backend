@@ -146,7 +146,6 @@ Execution Philosophy: Your task is to give this person a new scalp hairstyle whi
       contents: prompt,
     });
 
-console.error('response',JSON.stringify(response))
     // Extract the generated image from response
     for (const part of response.candidates[0].content.parts) {
       if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
