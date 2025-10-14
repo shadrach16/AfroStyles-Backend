@@ -10,7 +10,7 @@ const hairstyleSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['Braids', 'Natural', 'Modern', 'Traditional', 'Protective', 'Locs']
+    enum:  ['Low Cut',  'Fades',  'Coils',  'Afros',  'Locs',  'Twists',  'Braids',  'Weaves',  'Protective',  'Straight',  'Relaxed',  'Traditional',  'Modern',  'Fashion']
   },
   gender: {
     type: String,
@@ -61,7 +61,6 @@ const hairstyleSchema = new mongoose.Schema({
 hairstyleSchema.index({ category: 1, gender: 1 });
 hairstyleSchema.index({ popularity: -1 });
 hairstyleSchema.index({ isActive: 1 });
-hairstyleSchema.index({ tags: 1 });
 
 // Method to increment generation count
 hairstyleSchema.methods.incrementGeneration = function() {
