@@ -235,4 +235,31 @@ router.delete('/account', protect, async (req, res, next) => {
   }
 });
 
+
+
+router.put('/update-device-token', protect, async (req, res, next) => {
+  try {
+    const { deviceToken } = req.body;
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        user.deviceToken = deviceToken;
+         await user.save();
+ 
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Device token updated successfully',
+      data: { user }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
 module.exports = router;

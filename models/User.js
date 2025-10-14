@@ -22,6 +22,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+   deviceToken: {
+    type: String  
+  },
   isPro: {
     type: Boolean,
     default: false

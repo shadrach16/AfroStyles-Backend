@@ -2,12 +2,24 @@ const mongoose = require('mongoose');
 const Hairstyle = require('../models/Hairstyle');
 require('dotenv').config();
 
+const admin = require('firebase-admin');
+
+
+const serviceAccount = require('./hair-studio-a9654-firebase-adminsdk-fbsvc-d632781b15.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+
+const NOTIFICATION_TITLE = 'Low Drop-Fade with Sharp Line-Up and V-Shape Temple Detail1'
+
 // Sample hairstyles data with Replicate model IDs
 const hairstyles = [
   {
-    name: 'Low Drop-Fade with Sharp Line-Up and V-Shape Temple Detail',
+    name: NOTIFICATION_TITLE,
     description: ' ',
-     ai_description: `Title: Low Drop-Fade with Sharp Line-Up and V-Shape Temple Detail
+     ai_description: `Low Drop-Fade with Sharp Line-Up and V-Shape Temple Detail
 
 I. Architectural Foundation and Visual Description
 A professional studio portrait photograph of a dark-skinned man showcasing an ultra-low drop-fade with a crisp line-up and a distinct V-shape design element at the temple, photographed from a three-quarter view.
@@ -58,6 +70,76 @@ IV. Adaptive Context and Maintenance
    
 ];
 
+
+
+const sendNotificationToAllUsers = async () => {
+    try {
+        let lastId = null;
+        const batchSize = 500; // Process 500 users at a time
+        let totalNotified = 0;
+        let totalUsers = 0;
+
+        console.log('Starting broadcast push notification to all users...');
+
+        while (true) {
+            // 1. Fetch a batch of users
+            // Query optimization: Start from the last retrieved ID for pagination
+            let query = User.find().select('deviceToken');
+            
+            if (lastId) {
+                query = query.where('_id').gt(lastId);
+            }
+            
+            const users = await query.limit(batchSize).sort({ _id: 1 });
+            
+            if (users.length === 0) {
+                break; // Exit loop when no more users are found
+            }
+            
+            totalUsers += users.length;
+
+            // 2. Filter for users with valid device tokens
+            const deviceTokens = users
+                .filter(user => user.deviceToken)
+                .map(user => user.deviceToken);
+
+            if (deviceTokens.length > 0) {
+                // 3. Construct the message payload
+                // The 'sendMulticast' method is more efficient for sending to multiple tokens
+                const message = {
+                    notification: {
+                        title: NOTIFICATION_TITLE,
+                        body: "A new collection of hairstyles has been added to the studio!",
+                    },
+                    data: {
+                        type: 'admin_action',
+                        link: '/?studio_status=upload',
+                    },
+                    tokens: deviceTokens, // Array of tokens
+                };
+
+                // 4. Send the batch notification
+                const response = await admin.messaging().sendMulticast(message);
+                
+                totalNotified += response.successCount;
+
+                console.log(`Batch sent. Successes: ${response.successCount}, Failures: ${response.failureCount}`);
+            }
+
+            // Update lastId to the last processed user's ID for the next batch query
+            lastId = users[users.length - 1]._id;
+        }
+
+        console.log(`✅ Push notification broadcast complete. Total users processed: ${totalUsers}. Total successful notifications: ${totalNotified}`);
+
+    } catch (error) {
+        console.error('Error in sendNotificationToAllUsers:', error.message);
+    }
+};
+    
+
+
+
 async function seedHairstyles() {
   try {
     // Connect to MongoDB
@@ -71,6 +153,7 @@ async function seedHairstyles() {
  
     // Insert new hairstyles
     const insertedHairstyles = await Hairstyle.insertMany(hairstyles);
+    sendNotificationToAllUsers()
     console.log(`✅ Inserted ${insertedHairstyles.length} hairstyles`);
 
     console.log('🎉 Hairstyles seeded successfully!');
