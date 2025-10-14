@@ -237,7 +237,7 @@ router.delete('/account', protect, async (req, res, next) => {
 
 
 
-router.put('/update-device-token', protect, async (req, res, next) => {
+router.post('/update-device-token', protect, async (req, res, next) => {
   try {
     const { deviceToken } = req.body;
 
