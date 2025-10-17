@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Hairstyle = require('../models/Hairstyle');
+const User = require('../models/User');
 require('dotenv').config();
 
 const admin = require('firebase-admin');
@@ -12,14 +13,14 @@ admin.initializeApp({
 });
 
 
-const NOTIFICATION_TITLE = 'Low Drop-Fade with Sharp Line-Up and V-Shape Temple Detail1'
+const NOTIFICATION_TITLE = 'Low Drop-Fade with Sharp Line-Up and V-Shape Temple Detail3'
 
 // Sample hairstyles data with Replicate model IDs
 const hairstyles = [
   {
     name: NOTIFICATION_TITLE,
     description: ' ',
-     ai_description: `Low Drop-Fade with Sharp Line-Up and V-Shape Temple Detail
+     ai_description: `Low Drop-Fade with Sharp Line-Up and V-Shape Temple Detail3
 
 I. Architectural Foundation and Visual Description
 A professional studio portrait photograph of a dark-skinned man showcasing an ultra-low drop-fade with a crisp line-up and a distinct V-shape design element at the temple, photographed from a three-quarter view.
@@ -75,15 +76,13 @@ IV. Adaptive Context and Maintenance
 const sendNotificationToAllUsers = async () => {
     try {
         let lastId = null;
-        const batchSize = 500; // Process 500 users at a time
+        const batchSize = 500; 
         let totalNotified = 0;
         let totalUsers = 0;
 
         console.log('Starting broadcast push notification to all users...');
 
         while (true) {
-            // 1. Fetch a batch of users
-            // Query optimization: Start from the last retrieved ID for pagination
             let query = User.find().select('deviceToken');
             
             if (lastId) {
@@ -93,40 +92,45 @@ const sendNotificationToAllUsers = async () => {
             const users = await query.limit(batchSize).sort({ _id: 1 });
             
             if (users.length === 0) {
-                break; // Exit loop when no more users are found
+                break;
             }
             
             totalUsers += users.length;
 
-            // 2. Filter for users with valid device tokens
-            const deviceTokens = users
+            const tokensToSend = users
                 .filter(user => user.deviceToken)
                 .map(user => user.deviceToken);
 
-            if (deviceTokens.length > 0) {
-                // 3. Construct the message payload
-                // The 'sendMulticast' method is more efficient for sending to multiple tokens
-                const message = {
-                    notification: {
-                        title: NOTIFICATION_TITLE,
-                        body: "A new collection of hairstyles has been added to the studio!",
-                    },
-                    data: {
-                        type: 'admin_action',
-                        link: '/?studio_status=upload',
-                    },
-                    tokens: deviceTokens, // Array of tokens
-                };
-
-                // 4. Send the batch notification
-                const response = await admin.messaging().sendMulticast(message);
+            if (tokensToSend.length > 0) {
                 
-                totalNotified += response.successCount;
+                // 💡 FIX: Create an array of individual send promises (one per token)
+                const sendPromises = tokensToSend.map(token => {
+                    const payload = {
+                        notification: {
+                            title: "A new collection of hairstyles has been added to the studio!",
+                            body: NOTIFICATION_TITLE,
+                        },
+                        data: {
+                            type: 'admin_action',
+                            link: '/?studio_status=upload',
+                        },
+                        // Use 'token' for the single destination
+                        token: token, 
+                    };
+                    // Use the older, basic 'send' method
+                    return admin.messaging().send(payload);
+                });
 
-                console.log(`Batch sent. Successes: ${response.successCount}, Failures: ${response.failureCount}`);
+                // Execute all sends concurrently
+                const results = await Promise.allSettled(sendPromises);
+                
+                // Count successful sends
+                const successCount = results.filter(r => r.status === 'fulfilled').length;
+                totalNotified += successCount;
+                
+                console.log(`Batch sent. Successes: ${successCount}, Failures: ${results.length - successCount}`);
             }
 
-            // Update lastId to the last processed user's ID for the next batch query
             lastId = users[users.length - 1]._id;
         }
 
@@ -136,7 +140,6 @@ const sendNotificationToAllUsers = async () => {
         console.error('Error in sendNotificationToAllUsers:', error.message);
     }
 };
-    
 
 
 
@@ -153,7 +156,7 @@ async function seedHairstyles() {
  
     // Insert new hairstyles
     const insertedHairstyles = await Hairstyle.insertMany(hairstyles);
-    sendNotificationToAllUsers()
+    await sendNotificationToAllUsers()
     console.log(`✅ Inserted ${insertedHairstyles.length} hairstyles`);
 
     console.log('🎉 Hairstyles seeded successfully!');

@@ -71,6 +71,7 @@ router.post('/google', async (req, res, next) => {
       user.googleId = googleId;
       user.name = name;
       user.avatar = avatar;
+      user.isActive = true;
       user.lastLogin = new Date();
       await user.save();
 
@@ -88,7 +89,8 @@ router.post('/google', async (req, res, next) => {
         email,
         name,
         avatar,
-        lastLogin: new Date()
+        lastLogin: new Date(),
+        isActive:true
       });
 
       // Track registration
@@ -261,5 +263,43 @@ router.post('/update-device-token', protect, async (req, res, next) => {
   }
 });
 
+
+
+
+router.get('/account/delete', (req, res) => {
+  res.status(200).json({
+    status: 'info',
+    message: 'To delete your account, you must log in to the app and use the "Delete Account" feature inside the settings or profile section. This ensures your identity is verified before permanent deletion.'
+  });
+});
+
+
+// @desc    Delete user account
+// @route   DELETE /api/auth/account/delete
+// @access  Private
+router.delete('/account/delete', protect, async (req, res, next) => {
+  try {
+    const user = req.user;
+    
+    // Deactivate user instead of hard deleting (better for data integrity)
+    await User.findByIdAndUpdate(user.id, { isActive: false, deviceToken: null });
+
+    // Track account deletion
+    await Analytics.trackEvent('user_account_deleted', {}, user.id);
+
+    // Clear the token cookie
+    res.cookie('token', 'none', {
+      expires: new Date(Date.now() + 10 * 1000),
+      httpOnly: true
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Account deactivated successfully. All associated data will be removed within 30 days.'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;
