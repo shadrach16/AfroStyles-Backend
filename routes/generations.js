@@ -41,7 +41,7 @@ const upload = multer({ storage: multer.memoryStorage(), /* ...limits */ });
     let prompt_text = null;
 
     switch (hairstyle.category) {
-    case 'Low Cut':
+    case 'Default':
         prompt_text = low_cut(hairstyle.ai_description);
         break;  
     default:
