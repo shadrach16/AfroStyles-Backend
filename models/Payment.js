@@ -50,6 +50,13 @@ const paymentSchema = new mongoose.Schema({
     customerCode: String,
     subscriptionCode: String
   },
+  googlePlay: { // Or just add purchaseToken at the top level
+    purchaseToken: {
+        type: String,
+        unique: true,
+        sparse: true // Allows multiple nulls but only one of each token
+    }
+},
   metadata: {
     userAgent: String,
     ipAddress: String,
