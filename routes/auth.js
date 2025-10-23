@@ -53,7 +53,7 @@ const sendTokenResponse = (user, statusCode, res, message = 'Success') => {
 // @access  Public
 router.post('/google', async (req, res, next) => {
   try {
-    const { googleId, email, name, avatar } = req.body;
+    const { googleId, email, name, avatar,referralCode } = req.body;
 
     if (!googleId || !email || !name) {
       return res.status(400).json({
@@ -92,6 +92,35 @@ router.post('/google', async (req, res, next) => {
         lastLogin: new Date(),
         isActive:true
       });
+
+
+if (referralCode) {
+        try {
+          const referrer = await User.findOne({ referralCode });
+          if (referrer && referrer.id !== user.id) {
+            user.referredBy = referrer._id;
+            await user.save();
+
+            // Grant 3 credits to the referrer
+            referrer.credits += 3;
+            await referrer.save();
+
+            // Track events
+            await Analytics.trackEvent('referral_success', {
+              referrerId: referrer._id,
+              newUserId: user._id,
+              creditsAwarded: 3
+            }, referrer._id);
+            await Analytics.trackEvent('user_referred', {
+              referrerId: referrer._id,
+            }, user._id);
+          }
+        } catch (referralError) {
+          // Fail silently, don't block signup
+          console.error('Referral processing error:', referralError);
+        }
+      }
+
 
       // Track registration
       await Analytics.trackEvent('user_registered', {
@@ -231,6 +260,29 @@ router.delete('/account', protect, async (req, res, next) => {
     res.status(200).json({
       status: 'success',
       message: 'Account deactivated successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+router.get('/referral-info', protect, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const referralCode = req.user.referralCode;
+
+    // Calculate stats
+    const referralCount = await User.countDocuments({ referredBy: userId, isActive: true });
+    const creditsEarned = referralCount * 3; // 3 credits per referral
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        referralCode,
+        referralCount,
+        creditsEarned
+      }
     });
   } catch (error) {
     next(error);

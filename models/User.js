@@ -1,5 +1,8 @@
+// models/User.js
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+ 
 
 const userSchema = new mongoose.Schema({
   googleId: {
@@ -25,6 +28,18 @@ const userSchema = new mongoose.Schema({
    deviceToken: {
     type: String  
   },
+  // --- 2. ADDED REFERRAL FIELDS ---
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  // ---------------------------------
   isPro: {
     type: Boolean,
     default: false
@@ -84,7 +99,18 @@ const userSchema = new mongoose.Schema({
 // Indexes
 userSchema.index({ email: 1 });
 userSchema.index({ googleId: 1 });
+userSchema.index({ referralCode: 1 }); // 3. Added index for referral code
 userSchema.index({ 'subscription.paystackCustomerCode': 1 });
+
+// --- 4. ADDED PRE-SAVE HOOK TO GENERATE REFERRAL CODE ---
+userSchema.pre('save', async function(next) {
+  if (!this.referralCode) {
+    const { nanoid } = await import('nanoid');
+    this.referralCode = nanoid(10).toUpperCase().replace(/[-_]/g, 'A'); 
+  }
+  next();
+});
+// ----------------------------------------------------
 
 // Virtual for remaining trial credits
 userSchema.virtual('remainingTrialCredits').get(function() {
