@@ -1,176 +1,264 @@
 const express = require('express');
-const axios = require('axios');
 const { body, validationResult } = require('express-validator');
 const Payment = require('../models/Payment');
 const User = require('../models/User');
-const {protect} = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
+const { google } = require('googleapis');
+
+const axios = require('axios');
 const { trackEvent } = require('../utils/analytics');
 const crypto = require('crypto');
-const { auth } = require('google-auth-library');
-const { google } = require('googleapis');
+
+
 
 
 
 const router = express.Router();
 
-// Paystack configuration
-const PAYSTACK_BASE_URL = 'https://api.paystack.co';
-
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
-
-// Credit packs configuration (prices are in Kobo)
+// Credit packs configuration matching frontend
 const CREDIT_PACKS = {
   'credits_3': {
-        id: 'credits_3',
-        name: 'Novies Pack',
-        credits: 3,
-        price:300
-      },
+    id: 'credits_3',
+    name: 'Novies Pack',
+    credits: 3,
+    price: 300
+  },
   'credits_25': {
-        id: 'credits_25',
-        name: 'Starter Pack',
-        credits: 25,
-        price:2250
-      },
-  "credits_100.0":  {
-        id: 'credits_100.0',
-        name: 'Value Pack',
-        credits: 100,
-        price:8000
-      },
+    id: 'credits_25',
+    name: 'Starter Pack',
+    credits: 25,
+    price: 2250
+  },
+  'credits_100.0': {
+    id: 'credits_100.0',
+    name: 'Value Pack',
+    credits: 100,
+    price: 8000
+  },
   'credits_250': {
-        id: 'credits_250',
-        name: 'Stylist Pack',
-        credits: 250,
-        price:17500
-      },
+    id: 'credits_250',
+    name: 'Stylist Pack',
+    credits: 250,
+    price: 17500
+  },
 };
- 
-
-
 
 router.post('/verify-google-play', protect, [
-    body('productId').notEmpty().withMessage('Product ID is required'),
-    body('purchaseToken').notEmpty().withMessage('Purchase token is required'),
-    body('packageName').notEmpty().withMessage('Package name is required') // Get this from your app config
+  body('productId').notEmpty().withMessage('Product ID is required'),
+  body('purchaseToken').notEmpty().withMessage('Purchase token is required'),
+  body('packageName').notEmpty().withMessage('Package name is required')
 ], async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ success: false, message: "Invalid input", errors: errors.array() });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Invalid input", 
+      errors: errors.array() 
+    });
+  }
+
+  const { productId, purchaseToken, packageName } = req.body;
+  const user = req.user;
+
+  try {
+    // --- 1. Check if purchaseToken was already processed (Early check) ---
+    const existingPayment = await Payment.findOne({
+      'googlePlay.purchaseToken': purchaseToken,
+      status: 'success'
+    });
+
+    if (existingPayment) {
+      console.warn(`Google Play Purchase Token already processed: ${purchaseToken}`);
+      return res.json({ 
+        success: true, 
+        message: "Purchase already processed.", 
+        creditsGranted: 0 
+      });
     }
 
-    const { productId, purchaseToken, packageName } = req.body;
-    const user = req.user;
-
+    // --- 2. Initialize Google Auth Client ---
+    let client;
     try {
-        // --- 1. Verify with Google ---
-        // Load service account credentials (store securely, e.g., env vars or secret manager)
-        // You need to create a service account in Google Cloud Console with Play Developer API access
-        const client = auth.fromJSON({
-            type: "service_account",
-            project_id: process.env.GOOGLE_PROJECT_ID,
-            private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-            private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'), // Handle newline characters
-            client_email: process.env.GOOGLE_CLIENT_EMAIL,
-            client_id: process.env.GOOGLE_CLIENT_ID,
-            // ... other service account details
-        });
-        client.scopes = ['https://www.googleapis.com/auth/androidpublisher'];
+      // Validate required environment variables
+      if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_CLIENT_EMAIL) {
+        throw new Error('Missing Google service account credentials in environment variables');
+      }
 
-        const androidPublisher = google.androidpublisher({
-            version: 'v3',
-            auth: client,
-        });
+      client = new google.auth.JWT({
+        email: process.env.GOOGLE_CLIENT_EMAIL,
+        key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        scopes: ['https://www.googleapis.com/auth/androidpublisher']
+      });
 
-        const verification = await androidPublisher.purchases.products.get({
-            packageName: packageName,
-            productId: productId,
-            token: purchaseToken,
-        });
-
-        if (!verification.data || verification.data.purchaseState !== 0) { // 0 = PURCHASED
-            console.error("Google Play Verification Failed:", verification.data);
-            // Optionally save failed attempt
-            await Payment.create({
-                user: user._id,
-                type: 'credit_pack',
-                itemId: productId,
-                itemName: CREDIT_PACKS[productId]?.name || productId,
-                amount: 0, // Amount might not be known here, or fetch from product details
-                currency: 'USD', // Assuming USD for Play Store
-                credits: 0,
-                status: 'failed',
-                'paystack.reference': `gp_${purchaseToken.substring(0, 10)}_${Date.now()}`, // Create a pseudo-reference
-                failureReason: `Google verification failed. State: ${verification.data?.purchaseState ?? 'unknown'}`,
-                webhookData: verification.data // Store Google's response
-            });
-            return res.status(400).json({ success: false, message: "Purchase verification failed with Google." });
-        }
-
-        // --- 2. Check if purchaseToken was already processed ---
-        const existingPayment = await Payment.findOne({
-            'googlePlay.purchaseToken': purchaseToken,
-            status: 'success' // Look only for successfully processed tokens
-        });
-
-        if (existingPayment) {
-            console.warn(`Google Play Purchase Token already processed: ${purchaseToken}`);
-            // Return success because the user *did* pay, even if we already credited them.
-            // The frontend should call .finish() regardless.
-            return res.json({ success: true, message: "Purchase already processed.", creditsGranted: 0 });
-        }
-
-        // --- 3. Grant Credits ---
-        const creditsToAdd = CREDIT_PACKS[productId]?.credits || 0;
-        if (creditsToAdd <= 0) {
-            console.error(`Invalid productId or credits not found for ${productId}`);
-            return res.status(400).json({ success: false, message: `Invalid product ID: ${productId}` });
-        }
-
-        await user.addCredits(creditsToAdd);
-
-        // --- 4. Record Successful Payment ---
-        await Payment.create({
-            user: user._id,
-            type: 'credit_pack',
-            itemId: productId,
-            itemName: CREDIT_PACKS[productId]?.name || productId,
-            amount: verification.data.priceAmountMicros ? verification.data.priceAmountMicros / 1000000 : 0, // Convert micros
-            currency: verification.data.priceCurrencyCode || 'USD',
-            credits: creditsToAdd,
-            status: 'success',
-            'paystack.reference': `gp_${purchaseToken.substring(0, 10)}_${Date.now()}`, // Pseudo-reference
-            // Add a specific field for Google Play data if needed in your Payment model
-            // For now, storing token in webhookData for idempotency check
-            'googlePlay.purchaseToken': purchaseToken, // Requires adding this field to Payment model
-            webhookData: verification.data // Store Google's response
-        });
-
-        console.log(`User ${user.email} credited with ${creditsToAdd} credits for Google Play purchase ${productId}`);
-        res.json({ success: true, message: "Purchase verified and credits added!", creditsGranted: creditsToAdd });
-
-    } catch (error) {
-        console.error('Google Play verification error:', error);
-        // Log detailed error from Google API if available
-        if (error.response?.data?.error) {
-            console.error('Google API Error:', error.response.data.error);
-        }
-        await Payment.create({
-            user: user._id,
-            type: 'credit_pack',
-            itemId: productId,
-            itemName: CREDIT_PACKS[productId]?.name || productId,
-            amount: 0,
-            currency: 'USD',
-            credits: 0,
-            status: 'failed',
-            'paystack.reference': `gp_${purchaseToken.substring(0, 10)}_${Date.now()}`,
-            failureReason: `Server error during verification: ${error.message}`,
-            'googlePlay.purchaseToken': purchaseToken,
-             webhookData: error.response?.data // Store error response if possible
-        });
-        next(error); // Pass to global error handler
+      await client.authorize();
+    } catch (authError) {
+      console.error('Google Auth initialization error:', authError);
+      throw new Error('Failed to initialize Google authentication');
     }
+
+    // --- 3. Verify with Google Play API ---
+    const androidPublisher = google.androidpublisher({
+      version: 'v3',
+      auth: client,
+    });
+
+    let verification;
+    try {
+      verification = await androidPublisher.purchases.products.get({
+        packageName: packageName,
+        productId: productId,
+        token: purchaseToken,
+      });
+    } catch (googleError) {
+      console.error('Google Play API error:', googleError.message);
+      
+      // Log detailed error for debugging
+      if (googleError.response?.data) {
+        console.error('Google API Error Details:', googleError.response.data);
+      }
+
+      // Create failed payment record
+      await Payment.create({
+        user: user._id,
+        type: 'credit_pack',
+        itemId: productId,
+        itemName: CREDIT_PACKS[productId]?.name || productId,
+        amount: 0,
+        currency: 'USD',
+        credits: 0,
+        status: 'failed',
+        paystack: {
+          reference: `gp_${purchaseToken.substring(0, 10)}_${Date.now()}`
+        },
+        googlePlay: {
+          purchaseToken: purchaseToken
+        },
+        failureReason: `Google API error: ${googleError.message}`,
+        webhookData: googleError.response?.data || { error: googleError.message }
+      });
+
+      return res.status(400).json({ 
+        success: false, 
+        message: "Failed to verify purchase with Google Play." 
+      });
+    }
+
+    // --- 4. Validate Purchase State ---
+    // purchaseState: 0 = PURCHASED, 1 = CANCELED, 2 = PENDING
+    if (!verification.data || verification.data.purchaseState !== 0) {
+      console.error("Google Play Verification Failed - Invalid purchase state:", verification.data);
+      
+      await Payment.create({
+        user: user._id,
+        type: 'credit_pack',
+        itemId: productId,
+        itemName: CREDIT_PACKS[productId]?.name || productId,
+        amount: 0,
+        currency: 'USD',
+        credits: 0,
+        status: 'failed',
+        paystack: {
+          reference: `gp_${purchaseToken.substring(0, 10)}_${Date.now()}`
+        },
+        googlePlay: {
+          purchaseToken: purchaseToken
+        },
+        failureReason: `Invalid purchase state: ${verification.data?.purchaseState ?? 'unknown'}`,
+        webhookData: verification.data
+      });
+
+      return res.status(400).json({ 
+        success: false, 
+        message: "Purchase verification failed - invalid purchase state." 
+      });
+    }
+
+    // --- 5. Check for consumption state (optional but recommended) ---
+    // consumptionState: 0 = YET_TO_BE_CONSUMED, 1 = CONSUMED
+    if (verification.data.consumptionState === 1) {
+      console.warn(`Purchase token already consumed: ${purchaseToken}`);
+      return res.json({ 
+        success: true, 
+        message: "Purchase already consumed.", 
+        creditsGranted: 0 
+      });
+    }
+
+    // --- 6. Validate Product ID ---
+    const creditsToAdd = CREDIT_PACKS[productId]?.credits || 0;
+    if (creditsToAdd <= 0) {
+      console.error(`Invalid productId or credits not found for ${productId}`);
+      return res.status(400).json({ 
+        success: false, 
+        message: `Invalid product ID: ${productId}` 
+      });
+    }
+
+    // --- 7. Grant Credits ---
+    await user.addCredits(creditsToAdd);
+
+    // --- 8. Record Successful Payment ---
+    const payment = await Payment.create({
+      user: user._id,
+      type: 'credit_pack',
+      itemId: productId,
+      itemName: CREDIT_PACKS[productId].name,
+      amount: verification.data.priceAmountMicros 
+        ? verification.data.priceAmountMicros / 1000000 
+        : CREDIT_PACKS[productId].price / 100, // Fallback to local price
+      currency: verification.data.priceCurrencyCode || 'USD',
+      credits: creditsToAdd,
+      status: 'success',
+      paystack: {
+        reference: `gp_${purchaseToken.substring(0, 10)}_${Date.now()}`
+      },
+      googlePlay: {
+        purchaseToken: purchaseToken
+      },
+      webhookData: verification.data
+    });
+
+    console.log(`User ${user.email} credited with ${creditsToAdd} credits for Google Play purchase ${productId}`);
+    
+    res.json({ 
+      success: true, 
+      message: "Purchase verified and credits added!", 
+      creditsGranted: creditsToAdd 
+    });
+
+  } catch (error) {
+    console.error('Google Play verification error:', error);
+    
+    // Attempt to log failed payment (but don't fail if this fails)
+    try {
+      await Payment.create({
+        user: user._id,
+        type: 'credit_pack',
+        itemId: productId,
+        itemName: CREDIT_PACKS[productId]?.name || productId,
+        amount: 0,
+        currency: 'USD',
+        credits: 0,
+        status: 'failed',
+        paystack: {
+          reference: `gp_${purchaseToken.substring(0, 10)}_${Date.now()}`
+        },
+        googlePlay: {
+          purchaseToken: purchaseToken
+        },
+        failureReason: `Server error during verification: ${error.message}`,
+        webhookData: { error: error.message, stack: error.stack }
+      });
+    } catch (logError) {
+      console.error('Failed to log payment error:', logError);
+    }
+    
+    // Return error response
+    res.status(500).json({
+      success: false,
+      message: 'Server error during purchase verification. Please contact support.'
+    });
+  }
 });
 
 
