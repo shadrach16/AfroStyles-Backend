@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "afro-ai-473921",
+  "private_key_id": "fc6ff01dda3c5cc4c6fca166ed296d53c7234e5b",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDcVcxfZcq1Dgrg\nZfKXQ+E3aUMnQ2wq/ZNOXlvdvKsb/2CF0hrYmJPuXEZNIQYkWe59ex7Xsnlo306+\nwQuecFFyD7x4ZXtHt1difgBJKdP5+FZfS2xMmxAI8CrSktV67QhosR3dWnjfVNQf\nEglsA/kHCTFmTstlrEzUSIL2RrYKUI3YDeJm2Cqg+t4VAIMt011cJ3WrBrqi2xXF\nus5+/5Sb3pw41eLn6aZiGGgPIJna3h3xRivOoFvpEOsbiI5d0DNIiT1v1SUGLxOb\nxIJlNCbAtcf8cXaLDPaWTaq07ulAabTZYdP7SGTywoBSqaOCr0a44v8Mha0VSfWs\nGFVoaqTFAgMBAAECggEAZwZnTaQXKJmsVEjXKgu/X12E3PMVvPRc0KQmaIQzrh+3\nTltz2htd8HKNHLt4V78FWP8c6Na3FmZ0N5WkjS0PqDnbcqBhCKOd5JvuHkfEqnmI\nSX7G4PsQgF1saJHn6Fa1O961jC8lnafYl76jUTJ6WuPdiW0GhkAOnKRbODTQIfmy\nLb5cTvskfDEoZv19B+el1hWz5UeewkD911UhDZjrdQjuIvPXlQY0EMih5CTxvZ+k\ntF+Hyf744HrIFbR387LOKRFSK7/FMxindAbuMdwphvDduW8n+IShefXL21o9LII+\nk4IPHKwB9JZneNY3L+200xjeu66Gao1/BufznR/B8QKBgQD6hDfvOuig9m6WAmY0\nRE2OmEpIK5rgImDR8xIKVzLRoDFpMFV4osSq7sYxhfDLJLBxiIKMeJ8e4aqo+OFx\nFM9omhZQqRrSXMY5qmY5BfrbIDFJXPWNH1OdVPGcSh1BCyS2mmUMyesXwCVPHNX5\nlvPX7XOZNqzvt/GnIc/Sl/1qBwKBgQDhKHUPS/Prcm3Ei8lstSd1smy3YXOBZi5o\n6XUiohYAL1WfeBgz7a4LqmsV6lY4WgFpRr6kXngs5L/5wJJ7nf2I63iLj2h6q5Dt\n4vIzYKynD4n4I0T20sYhXLMwqLioUZxzUjJBVsOqjprz7oDCKbYdBNz0HbbFglZS\nckyREuV30wKBgFcmTgskdC8i67+13/ZI2K5FnnnS6ZMVgpcnN1xvj1dLokTUsrc/\n8KkCXeJ2lRkmj1c/xSK3B6wHl4Ym5s6fDbR2/lJbMeCCs9b1x5AI24cFgP/jnezV\nPBJcrZzQT7MD/Gal+YdkayudBZ2rC2lDsVqp2XAwjCLs291nrtO1WkxbAoGACQWX\n+y7t7Sc+ort/LK3tkNe/Z3GuMScpAOcp3GNmQkejRKqJPbtuV+VSOSSUo9lnaRJ+\nnRNz+UiJMLa4p99iw1O8Fst+QjwRqJaJYemjwWXr/1dachFsAvY17+My0vvCKxTG\nErwpRvJD3zZVTnJha7RALj/qjOt2DgOqcb2yGCUCgYEApBQkU8Q3WffL1RFuzppL\nynUqB3f9iErpimJsCFJsIK0+Hxd4BoGpcDA7KRZqX8EO54TViqNEFYvMo0O0CSXL\nDdh2OhJvBDckjzfAZEOTWrWYc+CbHv+x4ZfzeVx8hkyw19BnTyaZ/CrRTJUirpUh\nuWSa42ug93n+S66QX5OoJmo=\n-----END PRIVATE KEY-----\n",
+  "client_email": "play-billing-verifier@afro-ai-473921.iam.gserviceaccount.com",
+  "client_id": "113940485915264592918",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/play-billing-verifier%40afro-ai-473921.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

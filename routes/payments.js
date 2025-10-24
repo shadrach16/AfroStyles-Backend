@@ -20,12 +20,32 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 // Credit packs configuration (prices are in Kobo)
 const CREDIT_PACKS = {
-  credits_10: { credits: 10, price: 20000, name: '10 Credits' }, // Example for Google Play ID match
-  credits_25: { credits: 25, price: 225000, name: '25 Credits' },
-  credits_100: { credits: 100, price: 800000, name: '100 Credits' },
-  // Ensure IDs match Google Play Product IDs
+  'credits_3': {
+        id: 'credits_3',
+        name: 'Novies Pack',
+        credits: 3,
+        price:300
+      },
+  'credits_25': {
+        id: 'credits_25',
+        name: 'Starter Pack',
+        credits: 25,
+        price:2250
+      },
+  "credits_100.0":  {
+        id: 'credits_100.0',
+        name: 'Value Pack',
+        credits: 100,
+        price:8000
+      },
+  'credits_250': {
+        id: 'credits_250',
+        name: 'Stylist Pack',
+        credits: 250,
+        price:17500
+      },
 };
-
+ 
 
 
 
@@ -332,13 +352,13 @@ router.get('/plans', (req, res) => {
         id,
         ...pack,
         priceNGN: pack.price,
-        priceUSD: Math.round(pack.price / 1500) // Approximate conversion
+        priceUSD: Math.round(pack.price) // Approximate conversion
       })),
       subscriptions: Object.entries(SUBSCRIPTION_PLANS).map(([id, plan]) => ({
         id,
         ...plan,
         priceNGN: plan.price,
-        priceUSD: Math.round(plan.price / 1500) // Approximate conversion
+        priceUSD: Math.round(plan.price) // Approximate conversion
       }))
     }
   });
