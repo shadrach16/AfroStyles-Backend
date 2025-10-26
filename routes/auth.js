@@ -211,7 +211,7 @@ router.post('/reward_ad', protect, async (req, res, next) => {
 
    }
 
-    user.credits = user.credits+1;
+    user.credits = user.credits+0.1;
     user.save();
 
    res.status(200).json({
