@@ -16,6 +16,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
     const {
       category,
       gender,
+      feature,
       search,
       page = 1,
       limit = 20,
@@ -42,6 +43,36 @@ router.get('/', optionalAuth, async (req, res, next) => {
             { gender: 'unisex' }
           ]
         });
+      }
+    }
+
+    // Apply gender filter
+    if (feature && feature !== 'Latest') {
+      if (feature === 'Basic') {
+      orConditions.push({
+          $or: [
+            { price: 1 }, 
+          ]
+        });
+
+
+      } else if (feature === 'Trending') {
+      
+       orConditions.push({
+          $or: [
+            { price: 2 },
+            { gender: 3 },
+          ]
+        });
+
+      } else {
+  orConditions.push({
+          $or: [
+            { price: 4 },
+            { gender: 5 },
+          ]
+        });
+
       }
     }
 
