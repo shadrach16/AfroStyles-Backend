@@ -46,7 +46,7 @@ const userSchema = new mongoose.Schema({
   },
   credits: {
     type: Number,
-    default: 3, // Free trial credits
+    default: 5, // Free trial credits
     min: 0
   },
   subscription: {
@@ -68,7 +68,7 @@ const userSchema = new mongoose.Schema({
   freeTrialUsed: {
     type: Number,
     default: 0,
-    max: 3
+    max: 5
   },
   freeTrialExpiry: {
     type: Date,
@@ -116,7 +116,7 @@ userSchema.pre('save', async function(next) {
 userSchema.virtual('remainingTrialCredits').get(function() {
   const now = new Date();
   if (this.freeTrialExpiry && now < this.freeTrialExpiry) {
-    return Math.max(0, 3 - this.freeTrialUsed);
+    return Math.max(0, 5 - this.freeTrialUsed);
   }
   return 0;
 });
@@ -141,7 +141,7 @@ userSchema.methods.useCredits = function(amount = 1) {
   } else if (trialCredits > 0) {
     // Use remaining trial credits + regular credits
     const regularCreditsNeeded = amount - trialCredits;
-    this.freeTrialUsed = 3; // Max out trial credits
+    this.freeTrialUsed = 5; // Max out trial credits
     this.credits -= regularCreditsNeeded;
   } else {
     // Use regular credits only
