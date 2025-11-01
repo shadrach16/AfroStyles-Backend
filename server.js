@@ -46,6 +46,7 @@ app.use(cors({
       'http://localhost:5173',
       'https://localhost',
       'https://apiv2.campusprint.com.ng',
+      'https://app.revenuecat.com',
       process.env.FRONTEND_URL
     ].filter(Boolean);
     
