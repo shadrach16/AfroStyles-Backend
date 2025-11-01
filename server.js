@@ -16,9 +16,8 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const hairstyleRoutes = require('./routes/hairstyles');
 const generationRoutes = require('./routes/generations');
-const paymentRoutes = require('./routes/payments');
 const analyticsRoutes = require('./routes/analytics');
-
+const webhookRoutes = require('./routes/webhook');
 
 
 
@@ -62,7 +61,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-
+app.use('/api/webhooks', webhookRoutes);
 
 // Body parsing middleware
 app.use(express.json({ limit: '20mb' }));
@@ -89,7 +88,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/hairstyles', hairstyleRoutes);
 app.use('/api/generations', generationRoutes);
-app.use('/api/payments', paymentRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
 // Root endpoint

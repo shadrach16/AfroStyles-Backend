@@ -38,25 +38,18 @@ const paymentSchema = new mongoose.Schema({
     enum: ['pending', 'processing', 'success', 'failed', 'cancelled'],
     default: 'pending'
   },
-  paystack: {
-    reference: {
-      type: String,
-      unique: true,
-      required: true
+revenueCat: {
+    transactionId: { 
+        type: String, 
+        unique: true, 
+        sparse: true 
     },
-    accessCode: String,
-    authorizationUrl: String,
-    transactionId: String,
-    customerCode: String,
-    subscriptionCode: String
-  },
-  googlePlay: { // Or just add purchaseToken at the top level
-    purchaseToken: {
-        type: String,
-        unique: true,
-        sparse: true // Allows multiple nulls but only one of each token
+    eventId: { 
+        type: String, 
+        unique: true, 
+        sparse: true 
     }
-},
+  },
   metadata: {
     userAgent: String,
     ipAddress: String,
