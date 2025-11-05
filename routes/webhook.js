@@ -10,11 +10,12 @@ const router = express.Router();
 // Copy this object from your routes/payments.js file.
 // It MUST match your RevenueCat Product IDs.
 const CREDIT_PACKS = {
-  'credits_10': { id: 'credits_10', name: 'Novies Pack', credits: 3 },
-  'credits_25': { id: 'credits_25', name: 'Starter Pack', credits: 25 },
-  'credits_100': { id: 'credits_100', name: 'Essential Pack', credits: 100 },
-  'credits_250': { id: 'credits_250', name: 'Stylist Pack', credits: 250 },
-  'Unlimited': { id: 'Unlimited', name: 'Unlimited Access (VIP)', credits: 99999 }, // Or handle as subscription
+  'credits3': { id: 'credits3', name: 'Beginners Pack', credits: 3 },
+  'credits10': { id: 'credits10', name: 'Novies Pack', credits: 10 },
+  'credits25': { id: 'credits25', name: 'Starter Pack', credits: 25 },
+  'credits100': { id: 'credits100', name: 'Essential Pack', credits: 100 },
+  'credits250': { id: 'credits250', name: 'Stylist Pack', credits: 250 },
+  'unlimited': { id: 'unlimited', name: 'Lifetime Access (VIP)', credits: 9999999 }, // Or handle as subscription
 };
 
 const REVENUECAT_WEBHOOK_TOKEN = process.env.REVENUECAT_WEBHOOK_TOKEN;
@@ -23,6 +24,7 @@ const REVENUECAT_WEBHOOK_TOKEN = process.env.REVENUECAT_WEBHOOK_TOKEN;
 // --- 1. RevenueCat Webhook Handler ---
 // This route uses express.json() which we'll apply in server.js
 router.post('/revenuecat', express.json(), async (req, res) => {
+  console.log('revenuelog',JSON.stringify(req.headers),REVENUECAT_WEBHOOK_TOKEN)
   // 1. Verify Authorization Header
   const token = req.headers.authorization?.split(' ')[1];
   if (!token || token !== REVENUECAT_WEBHOOK_TOKEN) {

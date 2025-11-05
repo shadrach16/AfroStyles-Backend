@@ -101,15 +101,15 @@ if (referralCode) {
             user.referredBy = referrer._id;
             await user.save();
 
-            // Grant 3 credits to the referrer
-            referrer.credits += 3;
+            // Grant 5 credits to the referrer
+            referrer.credits += 5;
             await referrer.save();
 
             // Track events
             await Analytics.trackEvent('referral_success', {
               referrerId: referrer._id,
               newUserId: user._id,
-              creditsAwarded: 3
+              creditsAwarded: 5
             }, referrer._id);
             await Analytics.trackEvent('user_referred', {
               referrerId: referrer._id,
@@ -274,7 +274,7 @@ router.get('/referral-info', protect, async (req, res, next) => {
 
     // Calculate stats
     const referralCount = await User.countDocuments({ referredBy: userId, isActive: true });
-    const creditsEarned = referralCount * 3; // 3 credits per referral
+    const creditsEarned = referralCount * 5; // 5 credits per referral
 
     res.status(200).json({
       status: 'success',

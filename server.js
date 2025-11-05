@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+const path = require('path');
 
 // Import middleware
 const requestLogger = require('./middleware/requestLogger'); // 👈 ADD THIS LINE
@@ -18,7 +19,7 @@ const hairstyleRoutes = require('./routes/hairstyles');
 const generationRoutes = require('./routes/generations');
 const analyticsRoutes = require('./routes/analytics');
 const webhookRoutes = require('./routes/webhook');
-
+const watermarkRoutes = require('./routes/watermark'); // 👈 ADD THIS LINE
 
 
 const app = express();
@@ -70,6 +71,8 @@ app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 // Use the custom request logger
 app.use(requestLogger); // 👈 ADD THIS LINE
+
+app.use('/renders', express.static(path.join(__dirname, 'public/renders')));
 
 
 // Health check endpoint
