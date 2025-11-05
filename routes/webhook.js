@@ -36,12 +36,12 @@ router.post('/revenuecat', express.json(), async (req, res) => {
   // 2. Acknowledge the event immediately
   res.status(200).send('OK');
 
-  console.log('revenuelog',event.type,app_user_id)
   // 3. Process the event asynchronously
   try {
     
 
     const { app_user_id, product_id, transaction_id, id: event_id, price_in_purchased_currency, currency } = event;
+  console.log('revenuelog',event.type,app_user_id,product_id)
 
     // 4. Check for duplicate event
     const existingPayment = await Payment.findOne({
