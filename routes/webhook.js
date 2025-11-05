@@ -24,7 +24,6 @@ const REVENUECAT_WEBHOOK_TOKEN = process.env.REVENUECAT_WEBHOOK_TOKEN;
 // --- 1. RevenueCat Webhook Handler ---
 // This route uses express.json() which we'll apply in server.js
 router.post('/revenuecat', express.json(), async (req, res) => {
-  console.log('revenuelog',JSON.stringify(req.headers),REVENUECAT_WEBHOOK_TOKEN)
   // 1. Verify Authorization Header
   const token = req.headers.authorization?.split(' ')[1];
   if (!token || token !== REVENUECAT_WEBHOOK_TOKEN) {
@@ -37,13 +36,10 @@ router.post('/revenuecat', express.json(), async (req, res) => {
   // 2. Acknowledge the event immediately
   res.status(200).send('OK');
 
+  console.log('revenuelog',event.type,app_user_id)
   // 3. Process the event asynchronously
   try {
-    // We only care about consumable purchases
-    if (event.type !== 'CONSUMABLE_PURCHASE') {
-      console.log(`[RC Webhook] Skipping event type: ${event.type}`);
-      return;
-    }
+    
 
     const { app_user_id, product_id, transaction_id, id: event_id, price_in_purchased_currency, currency } = event;
 
