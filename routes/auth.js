@@ -211,12 +211,12 @@ router.post('/reward_ad', protect, async (req, res, next) => {
 
    }
 
-    user.credits = user.credits+0.1;
+    user.credits = user.credits+0.3;
     user.save();
 
    res.status(200).json({
       status: 'success',
-      message: '1 Credit added successfully',
+      message: '0.3 Credit added successfully',
       data: { user }
     });
   } catch (error) {
