@@ -11,6 +11,7 @@ const path = require('path');
 
 // Import middleware
 const requestLogger = require('./middleware/requestLogger'); // 👈 ADD THIS LINE
+const errorHandler = require('./middleware/errorHandler'); // 👈 ADD THIS LINE
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -66,13 +67,31 @@ app.use(cors({
 app.use('/api/webhooks', webhookRoutes);
 
 // Body parsing middleware
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+const jsonMiddleware = express.json({ limit: '20mb' });
 
 // Use the custom request logger
 app.use(requestLogger); // 👈 ADD THIS LINE
+app.use(errorHandler); // 👈 ADD THIS LINE
 
 app.use('/renders', express.static(path.join(__dirname, 'public/renders')));
+
+
+app.use((req, res, next) => {
+    // Check if the request is a file upload (POST to the /generations prefix)
+    const isFileUploadRoute = 
+        req.method === 'POST' && 
+        req.originalUrl.startsWith('/api/generations');
+
+    if (isFileUploadRoute) {
+        // Skip global JSON parsing. Multer will handle the body on the router level.
+        return next();
+    }
+
+    // For all other routes, run the JSON parser.
+    return jsonMiddleware(req, res, next);
+});
+
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 
 // Health check endpoint
@@ -119,50 +138,7 @@ app.use('*', (req, res) => {
   });
 });
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  
-  // Mongoose validation error
-  if (err.name === 'ValidationError') {
-    const errors = Object.values(err.errors).map(e => e.message);
-    return res.status(400).json({
-      success: false,
-      message: 'Validation Error',
-      errors
-    });
-  }
-  
-  // Mongoose cast error
-  if (err.name === 'CastError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid ID format'
-    });
-  }
-  
-  // JWT errors
-  if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid token'
-    });
-  }
-  
-  if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Token expired'
-    });
-  }
-  
-  // Default error
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
+ 
 
 // Database connection
 mongoose.connect(process.env.MONGO_URI, {
