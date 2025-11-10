@@ -20,19 +20,40 @@ router.get('/', optionalAuth, async (req, res, next) => {
       search,
       page = 1,
       limit = 20,
-      sort = 'popularity'
+      sort = 'popularity',
+      type = 'default'
     } = req.query;
 
     const filters = { isActive: true };
     const orConditions = [];
+    const isCustom = type === 'custom';
 
-    // Apply category filter
-    if (category && category !== 'All') {
+
+  if (isCustom) {
+      // Must be authenticated and only see their own custom styles
+      if (!req.user) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Authentication required to view custom hairstyles.'
+        });
+      }
+      filters.isCustom = true;
+      filters.userId = req.user._id; // Filter by the authenticated user's ID
+      filters.isActive = false;
+
+    } else {
+      filters.isActive = true;
+    }
+
+
+
+   if (!isCustom && category && category !== 'All') {
       filters.category = category;
     }
 
-    // Apply gender filter
-    if (gender && gender !== 'All') {
+ 
+
+    if (!isCustom && gender && gender !== 'All') {
       if (gender === 'unisex') {
         filters.gender = 'unisex'; // More specific filter if only unisex is chosen
       } else {
@@ -46,8 +67,11 @@ router.get('/', optionalAuth, async (req, res, next) => {
       }
     }
 
-    // Apply gender filter
-    if (feature && feature !== 'Latest') {
+
+ 
+
+
+        if ( !isCustom && feature && feature !== 'Latest') {
       if (feature === 'Basic') {
       orConditions.push({
           $or: [
@@ -61,7 +85,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
        orConditions.push({
           $or: [
             { price: 2 },
-            { gender: 3 },
+            { price: 3 },
           ]
         });
 
@@ -69,15 +93,17 @@ router.get('/', optionalAuth, async (req, res, next) => {
   orConditions.push({
           $or: [
             { price: 4 },
-            { gender: 5 },
+            { price: 5 },
           ]
         });
 
       }
     }
 
+
+
     // Search functionality
-    if (search) {
+  if (search) {
       // Find matches in any of these fields
       orConditions.push({
         $or: [
@@ -91,51 +117,41 @@ router.get('/', optionalAuth, async (req, res, next) => {
 
     // If we have multiple $or conditions, they must all be met ($and)
     if (orConditions.length > 0) {
-      filters.$and = orConditions;
+      filters.$and = (filters.$and || []).concat(orConditions);
     }
 
     // Sorting
-    let sortQuery = {};
-    switch (sort) {
-      case 'popularity':
-        sortQuery = { popularity: -1, generationCount: -1 };
-        break;
-      case 'newest':
-        sortQuery = { createdAt: -1 };
-        break;
-      case 'name':
-        sortQuery = { name: 1 };
-        break;
-      case 'price':
-        sortQuery = { price: 1 };
-        break;
-      default:
-        sortQuery = { generationCount: -1 };
-    }
+    let sortOptions = {};
+    if (sort === 'popularity') sortOptions = { popularity: -1, createdAt: -1 };
+    else if (sort === 'newest') sortOptions = { createdAt: -1 };
+    else if (sort === 'name') sortOptions = { name: 1 };
+    else if (sort === 'price') sortOptions = { price: 1 };
 
-    // Pagination
-    const pageNum = parseInt(page);
+    console.log('filters',JSON.stringify(filters))
+
+    const total = await Hairstyle.countDocuments(filters);
     const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
+    const totalPages = Math.ceil(total / limitNum);
 
-    // Execute queries
+    // Ensure page is valid
+    const pageNum = parseInt(page);
+    const skip = (pageNum - 1) * limitNum;
+    
     const hairstyles = await Hairstyle.find(filters)
-      .sort(sortQuery)
+      .sort(sortOptions)
       .skip(skip)
       .limit(limitNum);
 
-    const total = await Hairstyle.countDocuments(filters);
+    // console.log('hairstyles',hairstyles)
 
-    // ... your analytics and response code ...
-    
     res.status(200).json({
       status: 'success',
       results: hairstyles.length,
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum)
+        total: total,
+        pages: totalPages
       },
       data: { hairstyles }
     });

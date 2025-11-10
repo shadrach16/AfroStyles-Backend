@@ -114,7 +114,7 @@ const hairstyleFile = files.hairstyleImage[0];
         
         // 3. Upload the original Hairstyle image to Cloudinary (for thumbnail/reference)
         // NOTE: uploadToCloudinary must support taking a Buffer as input
-        const originalImageUpload = await uploadToCloudinary(userPhotoBuffer, 'custom_hairstyles');
+        const originalImageUpload = await uploadToCloudinary(hairstyleImageBuffer, 'custom_hairstyles');
 
         // 4. Create the new Hairstyle record
         const newHairstyle = new Hairstyle({
@@ -125,6 +125,9 @@ const hairstyleFile = files.hairstyleImage[0];
             ai_description: ai_description,
             price: CUSTOM_STYLE_PRICE,
             isActive: false, 
+            isCustom: true, 
+            userId: req.user._id, 
+
         });
         await newHairstyle.save();
 
