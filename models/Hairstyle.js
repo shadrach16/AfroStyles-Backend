@@ -10,7 +10,7 @@ const hairstyleSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum:  ['Low Cut',  'Fades',  'Coils',  'Afros',  'Locs',  'Twists',  'Braids',  'Weaves',  'Protective',  'Straight',  'Relaxed',  'Traditional',  'Modern',  'Fashion']
+    enum:  ['Low Cut','Bob',  'Fades',  'Coils',  'Afros',  'Locs',  'Twists',  'Braids',  'Weaves',  'Protective',  'Straight',  'Relaxed',  'Traditional',  'Modern',  'Fashion']
   },
   gender: {
     type: String,
@@ -35,8 +35,6 @@ const hairstyleSchema = new mongoose.Schema({
   popularity: {
     type: Number,
     default: 0,
-    min: 0,
-    max: 100
   },  
   isActive: {
     type: Boolean,
