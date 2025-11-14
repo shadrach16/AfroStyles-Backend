@@ -102,7 +102,7 @@ router.post('/revenuecat', express.json(), async (req, res) => {
 // This route uses express.json() which we'll apply in server.js
 router.post('/dodo', express.json(), async (req, res) => {
  
- console.log(req.body)
+ console.log(JSON.stringify(req.body))
 
   // 2. Acknowledge the event immediately
   res.status(200).send('OK');
