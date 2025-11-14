@@ -20,10 +20,11 @@ const CREDIT_PACKS = {
 // Copy this object from your routes/payments.js file.
 // It MUST match your RevenueCat Product IDs.
 const DODO_CREDIT_PACKS = {
-  'pdt_lagfXCThDsHBGzbyPx1T5': { id: 'credits25', name: 'Starter Pack', credits: 25 },
-  'credits100': { id: 'credits100', name: 'Essential Pack', credits: 100 },
-  'credits250': { id: 'credits250', name: 'Stylist Pack', credits: 250 },
-  'unlimited': { id: 'unlimited', name: 'Lifetime Access (VIP)', credits: 9999999 }, // Or handle as subscription
+  'pdt_lagfXCThDsHBGzbyPx1T5': { id: 'credits25', name: 'Starter Pack', credits: 25, price:'1.49' },
+  'pdt_FdBzw4Hq3SOdJ8qVPVFQz': { id: 'credits100', name: 'Essential Pack', credits: 100, price:'5.89' },
+  'pdt_jY9f6Y8bMsQKU19PpQaH6': { id: 'credits250', name: 'Stylist Pack', credits: 250, price:'12.48' },
+  'pdt_YZmc4M9fa7X2G7TY1dwfT': { id: 'credits1000', name: 'VIP Pack', credits: 1000, price:'44.99' },
+  'pdt_xLP2NCMJPm5Tyu3fcrsb0': { id: 'credits1000', name: 'Premium Pack', credits: 10000, price:'100' },
 };
 
 const REVENUECAT_WEBHOOK_TOKEN = process.env.REVENUECAT_WEBHOOK_TOKEN;
@@ -110,8 +111,6 @@ router.post('/revenuecat', express.json(), async (req, res) => {
 // This route uses express.json() which we'll apply in server.js
 router.post('/dodo', express.json(), async (req, res) => {
  
- console.log(JSON.stringify(req.body))
-
   // 2. Acknowledge the event immediately
   res.status(200).send('OK');
 
