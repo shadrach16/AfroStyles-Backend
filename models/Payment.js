@@ -85,7 +85,6 @@ revenueCat: {
 
 // Indexes
 paymentSchema.index({ user: 1, createdAt: -1 });
-paymentSchema.index({ 'paystack.reference': 1 });
 paymentSchema.index({ status: 1 });
 paymentSchema.index({ type: 1 });
 
@@ -125,22 +124,6 @@ paymentSchema.statics.getRevenueAnalytics = function(startDate, endDate) {
   ]);
 };
 
-// Method to mark as success
-paymentSchema.methods.markAsSuccess = function(transactionData) {
-  this.status = 'success';
-  this.paystack.transactionId = transactionData.id;
-  if (transactionData.customer) {
-    this.paystack.customerCode = transactionData.customer.customer_code;
-  }
-  this.webhookData = transactionData;
-  return this.save();
-};
 
-// Method to mark as failed
-paymentSchema.methods.markAsFailed = function(reason) {
-  this.status = 'failed';
-  this.failureReason = reason;
-  return this.save();
-};
 
 module.exports = mongoose.model('Payment', paymentSchema);
