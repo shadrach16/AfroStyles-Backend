@@ -96,6 +96,79 @@ router.post('/revenuecat', express.json(), async (req, res) => {
   }
 });
 
+
+
+// --- 1. Dodo Webhook Handler ---
+// This route uses express.json() which we'll apply in server.js
+router.post('/dodo', express.json(), async (req, res) => {
  
+ console.log(req.body)
+
+  const { event } = req.body;
+
+  console.log( event)
+
+  // 2. Acknowledge the event immediately
+  res.status(200).send('OK');
+
+  // 3. Process the event asynchronously
+  // try {
+
+  //   const { app_user_id, product_id, transaction_id, id: event_id, price_in_purchased_currency, currency } = event;
+  // console.log('revenuelog',event.type,app_user_id,product_id)
+
+  //   // 4. Check for duplicate event
+  //   const existingPayment = await Payment.findOne({
+  //     $or: [
+  //       { 'revenueCat.transactionId': transaction_id },
+  //       { 'revenueCat.eventId': event_id }
+  //     ]
+  //   });
+
+  //   if (existingPayment) {
+  //     console.log(`[RC Webhook] Duplicate event ${event_id}, skipping.`);
+  //     return;
+  //   }
+
+  //   // 5. Find the user
+  //   const user = await User.findById(app_user_id);
+  //   if (!user) {
+  //     console.error(`[RC Webhook] User not found: ${app_user_id}`);
+  //     return;
+  //   }
+
+  //   // 6. Get credit pack details
+  //   const pack = CREDIT_PACKS[product_id];
+  //   if (!pack || !pack.credits) {
+  //     console.error(`[RC Webhook] Credit pack not found or has 0 credits: ${product_id}`);
+  //     return;
+  //   }
+
+  //   // 7. Grant Credits & Log Payment
+  //   await user.addCredits(pack.credits);
+
+  //   await Payment.create({
+  //     user: user._id,
+  //     type: 'credit_pack',
+  //     itemId: product_id,
+  //     itemName: pack.name,
+  //     amount: price_in_purchased_currency,
+  //     currency: currency || 'USD',
+  //     credits: pack.credits,
+  //     status: 'success',
+  //     revenueCat: {
+  //       transactionId: transaction_id,
+  //       eventId: event_id
+  //     },
+  //     webhookData: event // Store the whole event for debugging
+  //   });
+
+  //   console.log(`[RC Webhook] Success: User ${user.email} credited with ${pack.credits} credits.`);
+
+  // } catch (error) {
+  //   console.error(`[RC Webhook] Error processing event: ${error.message}`, error);
+  // }
+});
+
 
 module.exports = router;
