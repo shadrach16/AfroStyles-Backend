@@ -17,6 +17,14 @@ const CREDIT_PACKS = {
   'credits250': { id: 'credits250', name: 'Stylist Pack', credits: 250 },
   'unlimited': { id: 'unlimited', name: 'Lifetime Access (VIP)', credits: 9999999 }, // Or handle as subscription
 };
+// Copy this object from your routes/payments.js file.
+// It MUST match your RevenueCat Product IDs.
+const DODO_CREDIT_PACKS = {
+  'pdt_lagfXCThDsHBGzbyPx1T5': { id: 'credits25', name: 'Starter Pack', credits: 25 },
+  'credits100': { id: 'credits100', name: 'Essential Pack', credits: 100 },
+  'credits250': { id: 'credits250', name: 'Stylist Pack', credits: 250 },
+  'unlimited': { id: 'unlimited', name: 'Lifetime Access (VIP)', credits: 9999999 }, // Or handle as subscription
+};
 
 const REVENUECAT_WEBHOOK_TOKEN = process.env.REVENUECAT_WEBHOOK_TOKEN;
 
@@ -112,7 +120,7 @@ router.post('/dodo', express.json(), async (req, res) => {
   try {
 
     const app_user_id = req.body.data.customer.email
-    product_id = req.body.data.metadata.product_id
+    product_id = req.body.data.product_cart[0].product_id
     transaction_id = req.body.data.business_id
     event_id = req.body.data.brand_id
     price_in_purchased_currency = req.body.data.settlement_amount
@@ -140,7 +148,7 @@ router.post('/dodo', express.json(), async (req, res) => {
     }
 
     // 6. Get credit pack details
-    const pack = CREDIT_PACKS[product_id];
+    const pack = DODO_CREDIT_PACKS[product_id];
     if (!pack || !pack.credits) {
       console.error(`[RC Webhook] Credit pack not found or has 0 credits: ${product_id}`);
       return;
