@@ -120,8 +120,8 @@ router.post('/dodo', express.json(), async (req, res) => {
 
     const app_user_id = req.body.data.customer.email
     product_id = req.body.data.product_cart[0].product_id
-    transaction_id = req.body.data.business_id
-    event_id = req.body.data.brand_id
+    transaction_id = req.body.data.payment_id
+    event_id = req.body.data.payment_id
     price_in_purchased_currency = req.body.data.settlement_amount
     currency = req.body.data.settlement_currency
 
