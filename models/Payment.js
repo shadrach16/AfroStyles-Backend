@@ -50,6 +50,18 @@ revenueCat: {
         sparse: true 
     }
   },
+  dodoPayment: {
+    transactionId: { 
+        type: String, 
+        unique: true, 
+        sparse: true 
+    },
+    eventId: { 
+        type: String, 
+        unique: true, 
+        sparse: true 
+    }
+  },
   metadata: {
     userAgent: String,
     ipAddress: String,

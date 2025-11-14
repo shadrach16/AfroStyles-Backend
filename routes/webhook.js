@@ -104,70 +104,72 @@ router.post('/dodo', express.json(), async (req, res) => {
  
  console.log(req.body)
 
-  const { event } = req.body;
-
-  console.log( event)
-
   // 2. Acknowledge the event immediately
   res.status(200).send('OK');
 
+
   // 3. Process the event asynchronously
-  // try {
+  try {
 
-  //   const { app_user_id, product_id, transaction_id, id: event_id, price_in_purchased_currency, currency } = event;
-  // console.log('revenuelog',event.type,app_user_id,product_id)
+    const app_user_id = req.body.data.customer.email
+    product_id = req.body.data.metadata.product_id
+    transaction_id = req.body.data.business_id
+    event_id = req.body.data.brand_id
+    price_in_purchased_currency = req.body.data.settlement_amount
+    currency = req.body.data.settlement_currency
 
-  //   // 4. Check for duplicate event
-  //   const existingPayment = await Payment.findOne({
-  //     $or: [
-  //       { 'revenueCat.transactionId': transaction_id },
-  //       { 'revenueCat.eventId': event_id }
-  //     ]
-  //   });
 
-  //   if (existingPayment) {
-  //     console.log(`[RC Webhook] Duplicate event ${event_id}, skipping.`);
-  //     return;
-  //   }
+    // 4. Check for duplicate event
+    const existingPayment = await Payment.findOne({
+      $or: [
+        { 'dodoPayment.transactionId': transaction_id },
+        { 'dodoPayment.eventId': event_id }
+      ]
+    });
 
-  //   // 5. Find the user
-  //   const user = await User.findById(app_user_id);
-  //   if (!user) {
-  //     console.error(`[RC Webhook] User not found: ${app_user_id}`);
-  //     return;
-  //   }
+    if (existingPayment) {
+      console.log(`[RC Webhook] Duplicate event ${event_id}, skipping.`);
+      return;
+    }
 
-  //   // 6. Get credit pack details
-  //   const pack = CREDIT_PACKS[product_id];
-  //   if (!pack || !pack.credits) {
-  //     console.error(`[RC Webhook] Credit pack not found or has 0 credits: ${product_id}`);
-  //     return;
-  //   }
+    // 5. Find the user
+    const user = await User.findOne({email:app_user_id});
+    if (!user) {
+      console.error(`[RC Webhook] User not found: ${app_user_id}`);
+      return;
+    }
 
-  //   // 7. Grant Credits & Log Payment
-  //   await user.addCredits(pack.credits);
+    // 6. Get credit pack details
+    const pack = CREDIT_PACKS[product_id];
+    if (!pack || !pack.credits) {
+      console.error(`[RC Webhook] Credit pack not found or has 0 credits: ${product_id}`);
+      return;
+    }
 
-  //   await Payment.create({
-  //     user: user._id,
-  //     type: 'credit_pack',
-  //     itemId: product_id,
-  //     itemName: pack.name,
-  //     amount: price_in_purchased_currency,
-  //     currency: currency || 'USD',
-  //     credits: pack.credits,
-  //     status: 'success',
-  //     revenueCat: {
-  //       transactionId: transaction_id,
-  //       eventId: event_id
-  //     },
-  //     webhookData: event // Store the whole event for debugging
-  //   });
+    // 7. Grant Credits & Log Payment
+    await user.addCredits(pack.credits);
 
-  //   console.log(`[RC Webhook] Success: User ${user.email} credited with ${pack.credits} credits.`);
+    await Payment.create({
+      user: user._id,
+      type: 'credit_pack',
+      itemId: product_id,
+      itemName: pack.name,
+      amount: price_in_purchased_currency,
+      currency: currency || 'USD',
+      credits: pack.credits,
+      status: 'success',
+      dodoPayment: {
+        transactionId: transaction_id,
+        eventId: event_id
+      },
+      webhookData: req.body.data // Store the whole event for debugging
+    });
 
-  // } catch (error) {
-  //   console.error(`[RC Webhook] Error processing event: ${error.message}`, error);
-  // }
+    console.log(`[RC Webhook] Success: User ${user.email} credited with ${pack.credits} credits.`);
+
+  } catch (error) {
+    console.error(`[RC Webhook] Error processing event: ${error.message}`, error);
+  }
 });
 
 
